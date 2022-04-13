@@ -1,11 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const projectRoot = path.resolve(__dirname, 'output', makeLittleRandomString() );
+const projectRoot = path.resolve(__dirname, 'output', makeLittleRandomString());
+const aspnetTemplateRoot = path.resolve(__dirname, 'aspnetproject');
 
 /** Makes an 8-letter little string */
 function makeLittleRandomString() {
-    const chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 
+    const chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
         'u', 'v', 'w', 'x', 'y', 'z'];
 
     let s = '';
@@ -46,12 +47,28 @@ function writeSourceFiles(root: string, extension: string, minTotalSize: number,
     for (let total = 0; total < minTotalSize; total += writeOneSourceFile(root, extension, randomExponential(rate)));
 }
 
-function randomExponential(rate: number) {  
-    return -Math.log(Math.random())/rate;
+function randomExponential(rate: number) {
+    return -Math.log(Math.random()) / rate;
 }
 
-fs.mkdirSync(projectRoot);
+function copyRecursiveSync(src: string, dest: string) {
+    var exists = fs.existsSync(src);
+    var stats = exists && fs.statSync(src);
+    var isDirectory = exists && (stats as fs.Stats).isDirectory();
+    if (isDirectory) {
+      fs.mkdirSync(dest);
+      fs.readdirSync(src).forEach(function(childItemName) {
+        copyRecursiveSync(path.join(src, childItemName),
+                          path.join(dest, childItemName));
+      });
+    } else {
+      fs.copyFileSync(src, dest);
+    }
+}
 
+copyRecursiveSync(aspnetTemplateRoot, projectRoot);
+const jsRoot = path.resolve(projectRoot, 'WebApplication8', 'wwwroot', 'js');
+writeSourceFiles(jsRoot, 'js', 20 * 1024 * 1024, 0.000003);
+writeSourceFiles(jsRoot, 'ts', 20 * 1024 * 1024, 0.000003);
 
-writeSourceFiles(projectRoot, 'js', 20 * 1024 * 1024, 0.000003);
-writeSourceFiles(projectRoot, 'ts', 20 * 1024 * 1024, 0.000003);
+console.log(`Created folder at ${projectRoot}`)
