@@ -1,7 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const projectRoot = path.resolve(__dirname, 'output', makeLittleRandomString());
+/** First command-line argument (optional) is a prefix for the folder name */
+const project_prefix = process.argv[2] || '';
+
+const projectRoot = path.resolve(__dirname, 'output', project_prefix + makeLittleRandomString());
 const aspnetTemplateRoot = path.resolve(__dirname, 'aspnetproject');
 
 /** Makes an 8-letter little string */
@@ -24,27 +27,35 @@ function makeOneFunction(name: string) {
     const z = "abc";
     return z + x;
 }
+
 `;
 }
 
-/** Makes one source file with the given path and size */
-function makeOneSourceFile(path: string, minSize: number) {
+/** Makes a little function with the given name and a semantic error*/
+function makeOneFunctionWithError(name: string) {
+    return `function ${name}()  {
+    const nope = {};
+    return nope.xyz;
+}
+
+`;
+}
+
+/** Makes one source file with the given extension and size */
+function writeOneSourceFile(projectRoot: string, extension: string, minSize: number, errorRate: number) {
     let s = '';
     while (s.length < minSize) {
-        s += makeOneFunction(makeLittleRandomString());
+        const makeFunction = (Math.random() < errorRate) ? makeOneFunctionWithError : makeOneFunction;
+        s += makeFunction(makeLittleRandomString());
     }
 
-    fs.writeFileSync(path, s);
+    fs.writeFileSync(path.resolve(projectRoot, `${makeLittleRandomString()}.${extension}`), s);
 
     return s.length;
 }
 
-function writeOneSourceFile(projectRoot: string, extension: string, minSize: number) {
-    return makeOneSourceFile(path.resolve(projectRoot, `${makeLittleRandomString()}.${extension}`), minSize);
-}
-
-function writeSourceFiles(root: string, extension: string, minTotalSize: number, rate: number) {
-    for (let total = 0; total < minTotalSize; total += writeOneSourceFile(root, extension, randomExponential(rate)));
+function writeSourceFiles(root: string, extension: string, minTotalSize: number, rate: number, errorRate: number) {
+    for (let total = 0; total < minTotalSize; total += writeOneSourceFile(root, extension, randomExponential(rate), errorRate));
 }
 
 function randomExponential(rate: number) {
@@ -68,7 +79,7 @@ function copyRecursiveSync(src: string, dest: string) {
 
 copyRecursiveSync(aspnetTemplateRoot, projectRoot);
 const jsRoot = path.resolve(projectRoot, 'WebApplication8', 'wwwroot', 'js');
-writeSourceFiles(jsRoot, 'js', 20 * 1024 * 1024, 0.000003);
-writeSourceFiles(jsRoot, 'ts', 20 * 1024 * 1024, 0.000003);
+writeSourceFiles(jsRoot, 'js', 20 * 1024 * 1024, 0.000003, 0.01);
+writeSourceFiles(jsRoot, 'ts', 20 * 1024 * 1024, 0.000003, 0.01);
 
 console.log(`Created folder at ${projectRoot}`)
