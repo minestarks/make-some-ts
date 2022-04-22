@@ -103,6 +103,52 @@ function writeSourceFiles(root: string, extension: string, minTotalSize: number,
     }
 }
 
+function writeTsConfigFile(projectRoot: string) {
+    const s = `{
+    "$schema": "http://json.schemastore.org/tsconfig",
+    "compileOnSave": true,
+    "compilerOptions": {
+        "module": "AMD",
+        "target": "es5",
+        "lib": [
+            "DOM",
+            "es5",
+            "es2015.iterable",
+            "es2015.promise"
+        ],
+        "noEmitHelpers": true,
+        "noEmitOnError": true,
+        "sourceMap": true,
+        "declaration": false,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
+        "noImplicitUseStrict": true,
+        "forceConsistentCasingInFileNames": true,
+        "removeComments": false,
+        "strictNullChecks": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true,
+        "experimentalDecorators": true,
+        "jsx": "react",
+        "moduleResolution": "node"
+    },
+    "watchOptions": {
+        "watchFile": "useFsEvents",
+        "watchDirectory": "useFsEvents"
+    },
+    "exclude": []
+}
+`
+    fs.writeFileSync(path.resolve(projectRoot, 'tsconfig.json'), s);
+}
+
+/** Creates a folder full of TypeScript files and a tsconfig.json */
+function writeTsProject(projectRoot: string, minTotalSize: number, rate: number, errorRate: number, modules: boolean) {
+    fs.mkdirSync(projectRoot);
+    writeTsConfigFile(projectRoot);
+    writeSourceFiles(projectRoot, 'ts', minTotalSize, rate, errorRate, modules);
+}
+
 function randomExponential(rate: number) {
     return -Math.log(Math.random()) / rate;
 }
@@ -123,8 +169,12 @@ function copyRecursiveSync(src: string, dest: string) {
 }
 
 copyRecursiveSync(aspnetTemplateRoot, projectRoot);
-const jsRoot = path.resolve(projectRoot, 'WebApplication8', 'wwwroot', 'js');
-writeSourceFiles(jsRoot, 'js', 20 * 1024 * 1024, 0.000003, 0.01, true /* modules */);
-writeSourceFiles(jsRoot, 'ts', 20 * 1024 * 1024, 0.000003, 0.01, true /* modules */);
+const wwwroot = path.resolve(projectRoot, 'WebApplication8', 'wwwroot');
+writeSourceFiles(path.resolve(wwwroot, 'js'), 'js', 20 * 1024 * 1024, 0.000003, 0.01, true /* modules */);
+
+// Make three tsconfig projects
+writeTsProject(path.resolve(wwwroot, 'tslittle'), 1 * 1024 * 1024, 0.00003, 0.01, true);
+writeTsProject(path.resolve(wwwroot, 'tsmedium'), 5 * 1024 * 1024, 0.000003, 0.01, true);
+writeTsProject(path.resolve(wwwroot, 'tslarge'), 15 * 1024 * 1024, 0.000003, 0.01, true);
 
 console.log(`Created folder at ${projectRoot}`)
