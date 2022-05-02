@@ -28,6 +28,8 @@ function makeOneFunction(name: string) {
     return z + x;
 }
 
+${name}();
+
 `;
 }
 
@@ -51,7 +53,9 @@ function makeOneFunctionWithError(name: string) {
 }
 
 function makeImportStatement(fileName: string) {
-    return `import { functionExport as functionImport } from '${fileName}';
+    return `import { functionExport as functionImport } from './${fileName}';
+
+functionImport();
 
 `;
 }
@@ -136,7 +140,7 @@ function writeTsConfigFile(projectRoot: string) {
         "watchFile": "useFsEvents",
         "watchDirectory": "useFsEvents"
     },
-    "exclude": []
+    "include": ["*.ts"]
 }
 `
     fs.writeFileSync(path.resolve(projectRoot, 'tsconfig.json'), s);
